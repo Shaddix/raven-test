@@ -1,0 +1,25 @@
+{
+  "name": "raven-test",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Artur Drobinskiy",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./bin/index.js",
+    "dev": "ts-node ./src/index.ts"
+  },
+  "dependencies": {
+    "@types/node": "^18.15.11",
+    "date-fns": "^2.29.3",
+    "ravendb": "^5.2.8",
+    "typescript": "^5.0.4"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "7.6.0",
+    "faker": "6.6.6",
+    "prettier": "2.8.7",
+    "ts-node": "10.9.1"
+  }
+}
