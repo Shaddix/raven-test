@@ -30,7 +30,8 @@ async function addEvents(store: DocumentStore) {
   session.advanced.maxNumberOfRequestsPerSession = 100;
 
   const start = new Date();
-  for (let i = 0; i < 200; i++) {
+  const max = 200;
+  for (let i = 0; i < max; i++) {
     const event = new StockCountEvent({
       stockCountId: "stockCount/" + (i % 10),
       id: faker.datatype.uuid(),
@@ -46,7 +47,11 @@ async function addEvents(store: DocumentStore) {
     // if (i % 100 == 0) await session.saveChanges();
   }
   await session.saveChanges();
-  console.log("Elapsed: " + (new Date().getTime() - start.getTime()) + " ms");
+  console.log(
+    `Insert ${max} items took: ` +
+      (new Date().getTime() - start.getTime()) +
+      " ms"
+  );
   session.dispose();
 }
 
@@ -88,7 +93,7 @@ async function getCount(store: DocumentStore) {
     data[0].uniqueThingId,
     "-",
     (data[0] as any)["count"],
-    "Elapsed",
+    "Indexing took",
     new Date().getTime() - now.getTime(),
     "ms"
   );
