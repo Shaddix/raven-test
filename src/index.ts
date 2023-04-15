@@ -21,6 +21,8 @@ function getStore() {
 }
 
 const store = getStore();
+const max = 200;
+
 /*
  * Adds 1000 events in batches of 20.
  *   adds exactly 100 events with `uniqueThingId: thing/!`
@@ -30,7 +32,7 @@ async function addEvents(store: DocumentStore) {
   session.advanced.maxNumberOfRequestsPerSession = 100;
 
   const start = new Date();
-  const max = 200;
+
   for (let i = 0; i < max; i++) {
     const event = new StockCountEvent({
       stockCountId: "stockCount/" + (i % 10),
@@ -56,20 +58,23 @@ async function addEvents(store: DocumentStore) {
 }
 
 // await addEvents(store);
-const promises: Promise<void>[] = [];
-for (let i = 0; i < 3; i++) {
+const promises: Promise<unknown>[] = [];
+const initialCount = await getCount(store);
+
+for (let i = 0; i < 20; i++) {
   //   if (i % 100 === 0) console.log("Iteration: " + i);
   await addEvents(store);
-  //   await sleep(1000);
-  promises.push(getCount(store));
+  promises.push(getCount(store, initialCount + max * 0.1 * (i + 1)));
+  await sleep(1000);
 }
 await Promise.all(promises);
 
 store.dispose();
 
-async function getCount(store: DocumentStore) {
+async function getCount(store: DocumentStore, expected?: number) {
   const session = store.openSession();
   const now = new Date();
+  await sleep(2000);
   const data: any[] = await session.advanced
     .rawQuery(
       `from "StockCountEvents" e
@@ -77,7 +82,7 @@ async function getCount(store: DocumentStore) {
    where e.uniqueThingId='thing/!'
    select count() as count, e.uniqueThingId`
     )
-    .waitForNonStaleResults()
+    // .waitForNonStaleResults()
     .all();
 
   //   const data = await session
@@ -88,13 +93,18 @@ async function getCount(store: DocumentStore) {
   //     .selectKey("uniqueThingId")
   //     .selectCount("count")
   //     .all();
+  const currentCount = (data[0] as any)["count"] as number;
   console.log(
     "Count: ",
     data[0].uniqueThingId,
     "-",
-    (data[0] as any)["count"],
+    currentCount,
+    expected ? (expected > currentCount ? "!!" : "OK") : "",
+    expected ? `(${expected})` : "",
     "Indexing took",
     new Date().getTime() - now.getTime(),
     "ms"
   );
+
+  return currentCount;
 }
