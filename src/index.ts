@@ -39,6 +39,7 @@ function getStore() {
 
 const store = getStore();
 const max = 1000;
+const stockCountId = "stockCounts/" + new Date().getTime();
 
 async function addAssets(store: DocumentStore) {
   const session = store.openSession();
@@ -53,7 +54,7 @@ async function addAssets(store: DocumentStore) {
   await session.store(asset);
 
   for (let i = 0; i < 101; i++) {
-    const asset = new Asset({
+    const asset = new Thing({
       epc: "things/" + i,
       ean: "ean/" + faker.datatype.number({ min: 1, max: 10 }),
       attributes: {
@@ -79,7 +80,7 @@ async function addEvents(store: DocumentStore) {
 
   for (let i = 0; i < max; i++) {
     const event = new StockCountEvent({
-      stockCountId: "stockCounts/1",
+      stockCountId: stockCountId,
       sessionId: "sessions/" + (i % 10),
       id: faker.datatype.uuid(),
       locationId: "locations/" + faker.random.numeric(2),
