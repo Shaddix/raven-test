@@ -3,18 +3,19 @@ import { StockCountEvent, Location } from "./types.js";
 import { faker } from "@faker-js/faker";
 import * as fs from "fs";
 import { sleep } from "./helper.js";
+import { getCount } from "./queries.js";
 
 function createStore() {
   // const store = new DocumentStore("http://127.0.0.1:8080", "araneo");
-  if (false) {
+  if (true) {
     //prod
     return new DocumentStore(
-      "https://a.tstprod.arturtest.ravendb.cloud",
+      "https://a.prod3-dev.arturtest.ravendb.cloud",
       "araneo",
       {
         certificate: fs.readFileSync("./prod-cert.pfx"),
         type: "pfx", // or "pem"
-        password: "FD208F432FA2AC6C9571ADCB7F160D",
+        password: "238A7B98F15F5CDA44A2C1512FF99BD8",
       }
     );
   } else {
@@ -51,14 +52,14 @@ async function addEvents(store: DocumentStore) {
 
   for (let i = 0; i < max; i++) {
     const event = new StockCountEvent({
-      stockCountId: "stockCount/" + (i % 10),
+      stockCountId: "stockCount/1",
+      sessionId: "session/" + (i % 10),
       id: faker.datatype.uuid(),
       locationId: "location/" + faker.random.numeric(2),
       value: faker.datatype.number({ min: 1, max: 100 }),
-      assetId: "assets/1",
-      date: new Date(),
-      uniqueThingId:
-        i % 10 == 0 ? "thing/!" : "thing/" + faker.random.numeric(2),
+      ean: "assets/1",
+      epc: i % 10 == 0 ? "thing/!" : "thing/" + faker.random.numeric(2),
+      timestamp: new Date(),
     });
 
     await session.store(event);
@@ -75,53 +76,14 @@ async function addEvents(store: DocumentStore) {
 
 await addEvents(store);
 const promises: Promise<unknown>[] = [];
-const initialCount = await getCount(store);
+// const initialCount = await getCount(store);
 
-for (let i = 0; i < 30; i++) {
+for (let i = 0; i < 3000; i++) {
   //   if (i % 100 === 0) console.log("Iteration: " + i);
   await addEvents(store);
-  promises.push(getCount(store, initialCount + max * 0.1 * (i + 1)));
+  // promises.push(getCount(store, initialCount + max * 0.1 * (i + 1)));
   await sleep(500);
 }
 await Promise.all(promises);
 
 store.dispose();
-
-async function getCount(store: DocumentStore, expected?: number) {
-  const session = store.openSession();
-  const now = new Date();
-  // await sleep(300);
-  const data: any[] = await session.advanced
-    .rawQuery(
-      `
-      from "StockCountEvents" e
-   group by e.uniqueThingId
-   where e.uniqueThingId='thing/!'
-   select count() as count, e.uniqueThingId`
-    )
-    .waitForNonStaleResults()
-    .all();
-
-  //   const data = await session
-  //     .query<StockCountEvent>({ collection: "StockCountEvents" })
-  //     .waitForNonStaleResults()
-  //     .whereEquals("uniqueThingId", "thing/!")
-  //     .groupBy("uniqueThingId")
-  //     .selectKey("uniqueThingId")
-  //     .selectCount("count")
-  //     .all();
-  const currentCount = (data[0] as any)["count"] as number;
-  console.log(
-    "Count: ",
-    data[0].uniqueThingId,
-    "-",
-    currentCount,
-    expected ? (expected > currentCount ? "!!" : "OK") : "",
-    expected ? `(${expected})` : "",
-    "Indexing took",
-    new Date().getTime() - now.getTime(),
-    "ms"
-  );
-
-  return currentCount;
-}

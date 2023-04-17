@@ -1,17 +1,43 @@
 export class StockCountEvent {
   public id: string = null!;
-  public stockCountId: string = null!;
-  public locationId: string = null!;
-  public assetId: string | null = null;
-  public uniqueThingId: string | null = null;
-  public value: number = null!;
 
-  public date: Date = null!;
+  public ean: string | null = null;
+  public epc: string | null = null;
+  public stockCountId: string = null!;
+  public sessionId: string = null!;
+  public timestamp: Date = null!;
+
+  public locationId: string = null!;
+
+  public value: number = null!;
 
   constructor(data: Readonly<StockCountEvent>) {
     Object.assign(this, data);
   }
 }
+
+export class Asset {
+  public epc: string = null!;
+
+  public ean: string | null = null;
+
+  public attributes: Record<string, any> = null!;
+
+  constructor(data: Readonly<Asset>) {
+    Object.assign(this, data);
+  }
+}
+
+// from StockCountEvents e
+// where e.stockCountId = '123' && e.sessionId='321'
+
+// from StockCountEvents e
+// where e.stockCountId = '123' && e.sessionId='321'
+//
+
+// from StockCountEvents e
+// group by e.epc
+// where e.stockCountId = '123', MIN(e.timestamp)
 
 export class Location {
   public id: string = null!;
