@@ -16,15 +16,17 @@ export class StockCountEvent {
   }
 }
 
-export class Asset {
+export class Thing {
+  public id: string = null!;
   public epc: string = null!;
 
   public ean: string | null = null;
 
   public attributes: Record<string, any> = null!;
 
-  constructor(data: Readonly<Asset>) {
+  constructor(data: Readonly<Omit<Thing, "id">>) {
     Object.assign(this, data);
+    this.id = this.epc;
   }
 }
 

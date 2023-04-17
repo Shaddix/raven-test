@@ -1,5 +1,5 @@
 import { DocumentStore, GroupBy } from "ravendb";
-import { StockCountEvent, Location } from "./types.js";
+import { StockCountEvent, Location, Thing } from "./types.js";
 import { faker } from "@faker-js/faker";
 import * as fs from "fs";
 import { sleep } from "./helper.js";
@@ -40,6 +40,33 @@ function getStore() {
 const store = getStore();
 const max = 1000;
 
+async function addAssets(store: DocumentStore) {
+  const session = store.openSession();
+  const asset = new Thing({
+    epc: "things/999",
+    ean: "ean/" + faker.datatype.number({ min: 1, max: 10 }),
+    attributes: {
+      color: faker.color.human(),
+      bool: false,
+    },
+  });
+  await session.store(asset);
+
+  for (let i = 0; i < 101; i++) {
+    const asset = new Asset({
+      epc: "things/" + i,
+      ean: "ean/" + faker.datatype.number({ min: 1, max: 10 }),
+      attributes: {
+        color: faker.color.human(),
+        bool: i % 2 === 0,
+      },
+    });
+
+    await session.store(asset);
+  }
+  await session.saveChanges();
+}
+
 /*
  * Adds 1000 events in batches of 20.
  *   adds exactly 100 events with `uniqueThingId: thing/!`
@@ -52,13 +79,13 @@ async function addEvents(store: DocumentStore) {
 
   for (let i = 0; i < max; i++) {
     const event = new StockCountEvent({
-      stockCountId: "stockCount/1",
-      sessionId: "session/" + (i % 10),
+      stockCountId: "stockCounts/1",
+      sessionId: "sessions/" + (i % 10),
       id: faker.datatype.uuid(),
-      locationId: "location/" + faker.random.numeric(2),
+      locationId: "locations/" + faker.random.numeric(2),
       value: faker.datatype.number({ min: 1, max: 100 }),
-      ean: "assets/1",
-      epc: i % 10 == 0 ? "thing/!" : "thing/" + faker.random.numeric(2),
+      ean: "eans/" + faker.datatype.number({ min: 1, max: 10 }),
+      epc: i % 10 == 0 ? "things/999" : "things/" + faker.random.numeric(2),
       timestamp: new Date(),
     });
 
@@ -74,6 +101,8 @@ async function addEvents(store: DocumentStore) {
   session.dispose();
 }
 
+//await addAssets(store);
+//throw new Error("exit");
 await addEvents(store);
 const promises: Promise<unknown>[] = [];
 // const initialCount = await getCount(store);
@@ -82,7 +111,7 @@ for (let i = 0; i < 3000; i++) {
   //   if (i % 100 === 0) console.log("Iteration: " + i);
   await addEvents(store);
   // promises.push(getCount(store, initialCount + max * 0.1 * (i + 1)));
-  await sleep(500);
+  //await sleep(500);
 }
 await Promise.all(promises);
 
