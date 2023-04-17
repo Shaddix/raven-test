@@ -4,24 +4,40 @@ import { faker } from "@faker-js/faker";
 import * as fs from "fs";
 import { sleep } from "./helper.js";
 
-function getStore() {
+function createStore() {
   // const store = new DocumentStore("http://127.0.0.1:8080", "araneo");
-  const store = new DocumentStore(
-    "https://a.free.arturtest.ravendb.cloud",
-    "araneo",
-    {
-      certificate: fs.readFileSync("./cert.pfx"),
-      type: "pfx", // or "pem"
-      password: "55E81AFA9BC441B1633FCF8EC2E2F55",
-    }
-  );
+  if (false) {
+    //prod
+    return new DocumentStore(
+      "https://a.tstprod.arturtest.ravendb.cloud",
+      "araneo",
+      {
+        certificate: fs.readFileSync("./prod-cert.pfx"),
+        type: "pfx", // or "pem"
+        password: "FD208F432FA2AC6C9571ADCB7F160D",
+      }
+    );
+  } else {
+    //free
+    return new DocumentStore(
+      "https://a.free.arturtest.ravendb.cloud",
+      "araneo",
+      {
+        certificate: fs.readFileSync("./cert.pfx"),
+        type: "pfx", // or "pem"
+        password: "55E81AFA9BC441B1633FCF8EC2E2F55",
+      }
+    );
+  }
+}
+function getStore() {
+  let store = createStore();
   store.initialize();
-
   return store;
 }
 
 const store = getStore();
-const max = 200;
+const max = 1000;
 
 /*
  * Adds 1000 events in batches of 20.
@@ -57,15 +73,15 @@ async function addEvents(store: DocumentStore) {
   session.dispose();
 }
 
-// await addEvents(store);
+await addEvents(store);
 const promises: Promise<unknown>[] = [];
 const initialCount = await getCount(store);
 
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < 30; i++) {
   //   if (i % 100 === 0) console.log("Iteration: " + i);
   await addEvents(store);
   promises.push(getCount(store, initialCount + max * 0.1 * (i + 1)));
-  await sleep(1000);
+  await sleep(500);
 }
 await Promise.all(promises);
 
@@ -74,15 +90,16 @@ store.dispose();
 async function getCount(store: DocumentStore, expected?: number) {
   const session = store.openSession();
   const now = new Date();
-  await sleep(2000);
+  // await sleep(300);
   const data: any[] = await session.advanced
     .rawQuery(
-      `from "StockCountEvents" e
+      `
+      from "StockCountEvents" e
    group by e.uniqueThingId
    where e.uniqueThingId='thing/!'
    select count() as count, e.uniqueThingId`
     )
-    // .waitForNonStaleResults()
+    .waitForNonStaleResults()
     .all();
 
   //   const data = await session
