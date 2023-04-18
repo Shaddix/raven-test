@@ -106,12 +106,12 @@ async function addEvents(store: DocumentStore) {
 //throw new Error("exit");
 await addEvents(store);
 const promises: Promise<unknown>[] = [];
-// const initialCount = await getCount(store);
+const initialCount = await getCount(store);
 
 for (let i = 0; i < 3000; i++) {
   //   if (i % 100 === 0) console.log("Iteration: " + i);
   await addEvents(store);
-  // promises.push(getCount(store, initialCount + max * 0.1 * (i + 1)));
+  promises.push(getCount(store, initialCount + max * 0.1 * (i + 1)));
   //await sleep(500);
 }
 await Promise.all(promises);
